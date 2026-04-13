@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloutiva | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .pill-nav { background: rgba(15, 15, 20, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .balance-gradient { background: linear-gradient(135deg, #007BFF 0%, #A020F0 100%); }
+        body { background-color: #050507; color: white; }
+        .copy-toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 10px; position: fixed; z-index: 1000; bottom: 100px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: bold; }
+        .copy-toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 80px; opacity: 0;} to {bottom: 100px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 100px; opacity: 1;} to {bottom: 80px; opacity: 0;} }
+        
+        .order-modal { display: none; position: fixed; inset: 0; z-index: 200; align-items: flex-end; justify-content: center; }
+        .order-modal.active { display: flex; }
+        .modal-content { background: #0A0A0C; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 28rem; border-radius: 2.5rem 2.5rem 0 0; padding: 2rem; transform: translateY(100%); transition: transform 0.3s ease-out; }
+        .order-modal.active .modal-content { transform: translateY(0); }
+    </style>
+</head>
+<body class="font-sans antialiased pb-32">
+
+    <header class="px-6 py-6 flex justify-between items-center max-w-2xl mx-auto w-full">
+        <div class="flex items-center gap-3">
+            <img src="logo.png" alt="Cloutiva" class="w-10 h-10 rounded-xl shadow-lg">
+            <span class="text-xl font-black tracking-tighter uppercase">Cloutiva</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="networkStatus" class="flex items-center gap-1.5 bg-green-500/10 px-3 py-1.5 rounded-full border border-green-500/20">
+                <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-[10px] font-bold text-green-500 uppercase">Live</span>
+            </div>
+            <button onclick="window.handleSync()" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition">
+                <i id="syncBtn" class="fa-solid fa-rotate text-slate-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="px-6 max-w-2xl mx-auto w-full space-y-8">
+        
+        <section class="flex justify-between items-end">
+            <div>
+                <h1 id="userGreeting" class="text-2xl font-bold">Hello, Chief 🚀</h1>
+                <p class="text-slate-500 text-sm">Welcome back to your command center.</p>
+            </div>
+            <div onclick="window.copyWallet()" class="cursor-pointer bg-white/5 border border-white/5 px-4 py-2 rounded-2xl flex flex-col items-end gap-1 hover:bg-white/10 transition group">
+                <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-blue-400 transition">Custodial Vault</span>
+                <span id="walletShortAddr" class="text-[10px] font-mono text-blue-400">0x00...000</span>
+            </div>
+        </section>
+
+        <section class="balance-gradient rounded-[2.5rem] p-8 shadow-2xl shadow-blue-500/20 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-start mb-1">
+                    <p class="text-white/70 text-xs font-bold uppercase tracking-widest">Available Balance</p>
+                    <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" class="w-4 h-4 opacity-50" alt="USDT Enabled">
+                </div>
+                <h2 class="text-4xl font-black mb-8 flex items-baseline gap-1">
+                    <span class="text-2xl font-medium opacity-80">₦</span>
+                    <span id="displayBalance">0.00</span>
+                </h2>
+                <div class="flex gap-3">
+                    <a href="topup.html" class="flex-1 bg-white text-slate-950 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-100 transition shadow-lg">
+                        <i class="fa-solid fa-plus-circle text-brand-blue"></i> Add Funds
+                    </a>
+                    <a href="history.html" title="Transaction History" class="w-14 bg-white/20 text-white py-3.5 rounded-2xl flex items-center justify-center hover:bg-white/30 transition">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-fingerprint text-blue-400 text-xs"></i>
+                </div>
+                <div>
+                    <p class="text-[9px] font-bold text-slate-500 uppercase">Vault Reference ID</p>
+                    <p id="vaultRefId" class="text-[10px] font-mono text-slate-300">Loading...</p>
+                </div>
+            </div>
+            <button onclick="window.copyRef()" class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-white transition">
+                <i class="fa-solid fa-copy text-xs"></i>
+            </button>
+        </section>
+
+        <section class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold">Orders Monitor</h3>
+                <span id="activeCount" class="text-xs font-bold text-brand-blue bg-blue-500/10 px-3 py-1 rounded-full uppercase">0 Orders</span>
+            </div>
+
+            <div id="pendingContainer" class="space-y-3">
+                <div id="emptyState" class="glass-card rounded-[2rem] p-12 flex flex-col items-center justify-center text-center space-y-4 border-dashed border-white/20">
+                    <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-2">
+                        <i class="fa-solid fa-box-open text-slate-600 text-2xl"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-slate-300">No Active Orders</h4>
+                        <p class="text-slate-500 text-xs max-w-[200px] mx-auto">Pending SMS or Boost orders will appear here for tracking.</p>
+                    </div>
+                    <a href="create-order.html" class="text-blue-400 text-sm font-bold hover:underline">Launch Order &rarr;</a>
+                </div>
+            </div>
+        
+        <section id="completedOrders" class="hidden space-y-4">
+            <h3 class="text-lg font-bold">Completed Orders</h3>
+            <div id="completedContainer" class="space-y-3"></div>
+        </section>
+        </section>
+    </main>
+
+    <div id="orderModal" class="order-modal">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="window.closeOrderModal()"></div>
+        <div class="modal-content relative">
+            <div class="w-12 h-1 bg-white/10 rounded-full mx-auto mb-6"></div>
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h3 id="modalTitle" class="text-xl font-black">Order Details</h3>
+                    <p id="modalService" class="text-xs text-blue-400 font-bold uppercase tracking-widest mt-1"></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">Expiry</p>
+                    <p id="modalTimer" class="text-lg font-mono text-red-500 font-bold">15:00</p>
+                </div>
+            </div>
+
+            <div id="statusBanner" class="hidden mb-4 p-3 rounded-2xl text-center text-sm font-bold">
+                <div id="statusCompletedBanner" class="hidden bg-green-500/10 border border-green-500/20 text-green-400">
+                    ✓ Order Completed Successfully
+                </div>
+                <div id="statusRefundedBanner" class="hidden bg-orange-500/10 border border-orange-500/20 text-orange-400">
+                    ↺ Order Cancelled - Refund Processed
+                </div>
+            </div>
+
+            <div id="smsModule" class="hidden space-y-4">
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Virtual Number</p>
+                    <div class="flex justify-between items-center">
+                        <span id="displayPhone" class="text-lg font-mono font-bold">+000...</span>
+                        <button onclick="window.copyTextFromElement('displayPhone')" class="text-blue-400 text-xs font-bold px-3 py-1 bg-blue-400/10 rounded-lg">COPY</button>
+                    </div>
+                </div>
+                <div class="bg-blue-600/10 p-5 rounded-2xl border border-blue-500/20 text-center">
+                    <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Verification Code (OTP)</p>
+                    <div class="flex items-center justify-center gap-3">
+                        <div id="displayOtp" class="text-3xl font-black tracking-widest text-white">------</div>
+                        <button onclick="window.copyTextFromElement('displayOtp')" class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center"><i class="fa-solid fa-copy text-[10px]"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="boostModule" class="hidden space-y-4">
+                <div class="bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase mb-2">Target URL</p>
+                    <div class="flex justify-between items-center gap-4">
+                        <p id="displayLink" class="text-xs text-slate-300 truncate font-mono flex-1"></p>
+                        <button onclick="window.copyTextFromElement('displayLink')" class="text-purple-400 text-xs font-bold">COPY</button>
+                    </div>
+                </div>
+                <div class="p-4 bg-purple-500/10 rounded-2xl text-center border border-purple-500/10">
+                    <p class="text-[10px] text-purple-400 font-bold uppercase">Boost Status</p>
+                    <p id="boostStatusText" class="text-sm font-bold text-white">Broadcasting to network servers...</p>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button onclick="window.closeOrderModal()" class="flex-1 py-4 bg-white/5 rounded-2xl text-sm font-bold hover:bg-white/10 transition">Back to Dashboard</button>
+                <button id="cancelOrderBtn" class="flex-1 py-4 bg-red-500/20 border border-red-500/30 text-red-400 rounded-2xl text-sm font-bold hover:bg-red-500/30 transition hidden">Cancel Order</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="copy-toast">Copied to Clipboard!</div>
+
+    <div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100]">
+        <nav class="pill-nav rounded-full px-4 py-3 flex justify-between items-center shadow-2xl">
+            <a href="dashboard.html" class="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 rounded-full transition-all group">
+                <i class="fa-solid fa-house text-white"></i>
+                <span class="text-xs font-bold text-white">Home</span>
+            </a>
+            <a href="create-order.html" class="p-3 text-slate-400 hover:text-white transition-all flex flex-col items-center">
+                <i class="fa-solid fa-plus text-lg"></i>
+            </a>
+            <a href="profile.html" class="p-3 text-slate-400 hover:text-white transition-all flex flex-col items-center">
+                <i class="fa-solid fa-circle-user text-lg"></i>
+            </a>
+        </nav>
+    </div>
+
+    <script type="module">
+import { protectPage, getUserIdHex, db, syncOnChainBalance, callHeroSms, callSmmWizGet, SERVICE_MAP, getServiceInfo } from './auth-guard.js';
+import { collection, query, where, onSnapshot, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+let userFullWallet = "";
+let userFullRef = "";
+let currentUserUid = null;
+let activeOrders = [];
+let unsubscribeOrders = null;
+let openOrderId = null; // Track which order is being viewed
+let currentViewedOrder = null; // Store the current order data for modal display
+
+// ===================== INIT =====================
+protectPage((userData) => {
+    currentUserUid = userData.uid;
+
+    const firstName = userData.name ? userData.name.split(' ')[0] : 'Chief';
+    document.getElementById('userGreeting').innerText = `Hello, ${firstName} 🚀`;
+
+    document.getElementById('displayBalance').innerText =
+        (userData.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+    if (userData.walletAddress) {
+        userFullWallet = userData.walletAddress;
+        document.getElementById('walletShortAddr').innerText =
+            `${userFullWallet.slice(0, 6)}...${userFullWallet.slice(-4)}`;
+    }
+
+    userFullRef = getUserIdHex(userData.uid);
+    document.getElementById('vaultRefId').innerText =
+        `${userFullRef.substring(0, 18)}...`;
+
+    startOrderListener(userData.uid);
+    startModalRefreshLoop();
+});
+
+// ===================== MODAL REFRESH LOOP =====================
+function startModalRefreshLoop() {
+    setInterval(() => {
+        const modal = document.getElementById('orderModal');
+        if (modal.classList.contains('active')) {
+            refreshOpenOrderModal();
+        }
+    }, 1000); // Update every second
+}
+
+// ===================== ORDER LISTENER =====================
+function startOrderListener(uid) {
+    if (unsubscribeOrders) unsubscribeOrders();
+
+    const historyRef = collection(db, "users", uid, "history");
+    
+    // Listen to ALL orders (both pending and completed)
+    const q = query(historyRef);
+
+    unsubscribeOrders = onSnapshot(q, (snapshot) => {
+        const container = document.getElementById('pendingContainer');
+        const completedContainer = document.getElementById('completedContainer');
+        const emptyState = document.getElementById('emptyState');
+        const completedSection = document.getElementById('completedOrders');
+
+        const allOrders = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(item => item.category === 'sms' || item.category === 'boost')
+            .sort((a, b) => b.timestamp - a.timestamp);
+
+        // Separate pending and completed orders
+        const pendingOrders = allOrders.filter(item => item.status === 'pending');
+        const completedOrders = allOrders.filter(item => item.status === 'completed' || item.status === 'cancelled');
+
+        // Update active orders and manage intervals
+        const oldIds = new Set(activeOrders.map(o => o.id));
+        const newIds = new Set(pendingOrders.map(o => o.id));
+
+        // Clear intervals for orders that are no longer pending
+        activeOrders.forEach(order => {
+            if (!newIds.has(order.id)) {
+                clearInterval(order.interval);
+                clearInterval(order.polling);
+            }
+        });
+
+        activeOrders = pendingOrders;
+
+        document.getElementById('activeCount').innerText =
+            `${activeOrders.length} Orders`;
+
+        // Render Pending Orders
+        if (activeOrders.length === 0) {
+            emptyState.classList.remove('hidden');
+            container.innerHTML = '';
+            container.appendChild(emptyState);
+        } else {
+            emptyState.classList.add('hidden');
+
+            container.innerHTML = activeOrders.map(order => {
+                const elapsed = Math.floor((Date.now() - order.timestamp) / 1000);
+                const remaining = Math.max(0, 900 - elapsed);
+                const minutes = Math.floor(remaining / 60);
+                const seconds = (remaining % 60).toString().padStart(2, '0');
+                
+                // Get service info for SMS orders
+                const serviceInfo = order.category === 'sms' && order.serviceCode ? getServiceInfo(order.serviceCode) : null;
+                
+                return `
+                <div onclick="window.viewOrder('${order.id}')"
+                    class="glass-card p-4 rounded-[1.8rem] flex justify-between items-center border cursor-pointer hover:border-white/20 transition group">
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl ${serviceInfo ? 'bg-white/10' : 'bg-blue-500/10'} flex items-center justify-center ${serviceInfo ? serviceInfo.color : 'text-blue-400'}">
+                            <i class="fa-solid ${serviceInfo ? serviceInfo.icon : (order.category === 'sms' ? 'fa-mobile-screen' : 'fa-rocket')}"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold">${order.title}</h4>
+                            <p class="text-[9px] text-slate-500 uppercase">${order.category}</p>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <p id="timer-${order.id}" class="text-xs font-mono font-bold ${remaining < 300 ? 'text-red-500' : 'text-yellow-500'}">
+                            ${minutes}:${seconds}
+                        </p>
+                        ${order.otpCode ? '<p class="text-[8px] text-green-400 font-bold">OTP ✓</p>' : ''}
+                    </div>
+                </div>
+            `;}
+            ).join('');
+        }
+
+        // Render Completed Orders
+        if (completedOrders.length > 0) {
+            completedSection.classList.remove('hidden');
+            completedContainer.innerHTML = completedOrders.map(order => `
+                <div class="glass-card p-4 rounded-[1.8rem] flex justify-between items-center border border-white/10">
+                    <div class="flex items-center gap-4 flex-1">
+                        <div class="w-10 h-10 rounded-xl ${
+                            order.status === 'completed' 
+                                ? 'bg-green-500/10' 
+                                : 'bg-orange-500/10'
+                        } flex items-center justify-center ${
+                            order.status === 'completed' 
+                                ? 'text-green-400' 
+                                : 'text-orange-400'
+                        }">
+                            <i class="fa-solid ${order.status === 'completed' ? 'fa-check-circle' : 'fa-x-circle'}"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold">${order.title}</h4>
+                            <p class="text-[9px] text-slate-500">${order.status === 'cancelled' && order.refund ? 'Refunded' : 'Completed'}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-bold text-slate-400">₦${order.amount.toLocaleString()}</p>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            completedSection.classList.add('hidden');
+        }
+
+        // Start intervals for new pending orders
+        startCountdowns();
+        startPolling();
+    });
+}
+
+// ===================== COUNTDOWN =====================
+function startCountdowns() {
+    activeOrders.forEach(order => {
+        if (order.interval) return; // Only set if not already set
+
+        order.interval = setInterval(async () => {
+            const elapsed = Math.floor((Date.now() - order.timestamp) / 1000);
+            const remaining = Math.max(0, 900 - elapsed);
+            const timerEl = document.getElementById(`timer-${order.id}`);
+
+            // Update timer element
+            if (timerEl) {
+                timerEl.innerText = `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+                
+                // Update color based on remaining time
+                timerEl.className = `text-xs font-mono font-bold ${remaining < 300 ? 'text-red-500' : 'text-yellow-500'}`;
+            }
+
+            // Update modal timer if this order is open
+            const modal = document.getElementById('orderModal');
+            if (modal.classList.contains('active') && openOrderId === order.id) {
+                document.getElementById('modalTimer').innerText = 
+                    `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+            }
+
+            // When timer expires
+            if (remaining <= 0) {
+                clearInterval(order.interval);
+
+                // Only auto-refund SMS orders without OTP
+                if (!order.otpCode && order.category === 'sms') {
+                    try {
+                        await updateDoc(doc(db, "users", currentUserUid), {
+                            balance: increment(order.amount)
+                        });
+
+                        await updateDoc(doc(db, "users", currentUserUid, "history", order.id), {
+                            status: 'cancelled',
+                            refund: true,
+                            cancelledAt: Date.now(),
+                            cancelReason: 'Expired - OTP not received'
+                        });
+
+                        showToast("Order expired → Refund processed ↺");
+                    } catch (err) {
+                        console.error("Refund error:", err);
+                        showToast("Refund failed - contact support");
+                    }
+                }
+
+                // For boost orders, also mark as cancelled if not completed
+                if (order.category === 'boost' && order.status === 'pending') {
+                    try {
+                        await updateDoc(doc(db, "users", currentUserUid), {
+                            balance: increment(order.amount)
+                        });
+
+                        await updateDoc(doc(db, "users", currentUserUid, "history", order.id), {
+                            status: 'cancelled',
+                            refund: true,
+                            cancelledAt: Date.now(),
+                            cancelReason: 'Expired - Boost did not complete'
+                        });
+
+                        showToast("Boost expired → Refund processed ↺");
+                    } catch (err) {
+                        console.error("Refund error:", err);
+                    }
+                }
+            }
+        }, 1000);
+    });
+}
+
+// ===================== POLLING SYSTEM =====================
+function startPolling() {
+    activeOrders.forEach(order => {
+        if (order.polling) return; // Only start if not already running
+
+        order.polling = setInterval(async () => {
+            try {
+                // ===== SMS OTP FETCH =====
+                if (order.category === 'sms' && !order.otpCode && order.status === 'pending') {
+                    const res = await callHeroSms({
+                        action: "getStatus",
+                        id: order.apiOrderId
+                    });
+
+                    const otpMatch = res.match(/\d{4,6}/);
+
+                    if (otpMatch) {
+                        // Clear countdown interval and polling when OTP arrives
+                        clearInterval(order.interval);
+                        clearInterval(order.polling);
+
+                        await updateDoc(doc(db, "users", currentUserUid, "history", order.id), {
+                            otpCode: otpMatch[0],
+                            status: "completed",
+                            completedAt: Date.now()
+                        });
+
+                        // Update the current viewed order if this is the one being viewed
+                        if (openOrderId === order.id && currentViewedOrder) {
+                            currentViewedOrder.otpCode = otpMatch[0];
+                            currentViewedOrder.status = "completed";
+                            currentViewedOrder.completedAt = Date.now();
+                        }
+
+                        showToast("OTP Received ✅");
+                    }
+                }
+
+                // ===== BOOST STATUS =====
+                if (order.category === 'boost' && order.status === 'pending') {
+                    console.log('🔄 Dashboard Followiz Status Poll for Order:', order.apiOrderId);
+                    const res = await callSmmWizGet({
+                        action: "status",
+                        order: order.apiOrderId
+                    });
+
+                    console.log('📊 Dashboard Followiz Status Response:', res);
+
+                    const apiStatus = res.status;
+                    const isCompleted = apiStatus === "Completed";
+                    const isCancelled = apiStatus === "Cancelled" || apiStatus === "Canceled" || apiStatus === "Refunded";
+
+                    if (isCompleted || isCancelled) {
+                        // Clear intervals when boost completes or cancels
+                        clearInterval(order.interval);
+                        clearInterval(order.polling);
+
+                        await updateDoc(doc(db, "users", currentUserUid, "history", order.id), {
+                            status: isCompleted ? "completed" : "cancelled",
+                            apiStatus: apiStatus,
+                            completedAt: Date.now()
+                        });
+
+                        // Update the current viewed order if this is the one being viewed
+                        if (openOrderId === order.id && currentViewedOrder) {
+                            currentViewedOrder.status = isCompleted ? "completed" : "cancelled";
+                            currentViewedOrder.apiStatus = apiStatus;
+                            currentViewedOrder.completedAt = Date.now();
+                        }
+
+                        showToast(isCompleted ? "Boost Completed 🚀" : "Boost Cancelled ❌");
+                    } else {
+                        // Update with current API status for UI display
+                        await updateDoc(doc(db, "users", currentUserUid, "history", order.id), {
+                            apiStatus: apiStatus
+                        });
+
+                        if (openOrderId === order.id && currentViewedOrder) {
+                            currentViewedOrder.apiStatus = apiStatus;
+                        }
+                    }
+                }
+
+                // ===== FRAUD DETECTION =====
+                if (order.amount > 50000) {
+                    await updateDoc(doc(db, "users", currentUserUid, "history", order.id), {
+                        flagged: true,
+                        fraudReason: "High-value order"
+                    });
+                }
+
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 3000);
+    });
+}
+
+// ===================== SYNC =====================
+window.handleSync = async () => {
+    const btn = document.getElementById('syncBtn');
+    btn.classList.add('fa-spin');
+
+    const result = await syncOnChainBalance(currentUserUid);
+
+    showToast(result.success
+        ? `₦${result.amount.toLocaleString()} added`
+        : result.message
+    );
+
+    btn.classList.remove('fa-spin');
+};
+
+// ===================== VIEW ORDER =====================
+window.viewOrder = (id) => {
+    openOrderId = id; // Track open order
+    
+    // Find the order in active orders
+    const order = activeOrders.find(o => o.id === id);
+    if (order) {
+        currentViewedOrder = { ...order }; // Store a copy of the order data
+    }
+    
+    refreshOpenOrderModal();
+};
+
+function refreshOpenOrderModal() {
+    if (!openOrderId || !currentViewedOrder) return;
+
+    const order = currentViewedOrder;
+
+    // Get service info for SMS orders
+    const serviceInfo = order.category === 'sms' && order.serviceCode ? getServiceInfo(order.serviceCode) : null;
+
+    document.getElementById('modalTitle').innerText = order.title;
+    document.getElementById('modalService').innerHTML = `
+        <i class="fa-solid ${serviceInfo ? serviceInfo.icon : (order.category === 'sms' ? 'fa-mobile-screen' : 'fa-rocket')} mr-2 ${serviceInfo ? serviceInfo.color : 'text-blue-400'}"></i>
+        ${serviceInfo ? serviceInfo.name : order.category.toUpperCase()}
+    `;
+
+    const smsM = document.getElementById('smsModule');
+    const boostM = document.getElementById('boostModule');
+    const statusBanner = document.getElementById('statusBanner');
+    const completedBanner = document.getElementById('statusCompletedBanner');
+    const refundedBanner = document.getElementById('statusRefundedBanner');
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+
+    smsM.classList.add('hidden');
+    boostM.classList.add('hidden');
+    statusBanner.classList.add('hidden');
+    completedBanner.classList.add('hidden');
+    refundedBanner.classList.add('hidden');
+
+    // Show status if not pending anymore
+    if (order.status === 'completed') {
+        statusBanner.classList.remove('hidden');
+        completedBanner.classList.remove('hidden');
+        cancelBtn.classList.add('hidden');
+    } else if (order.status === 'cancelled') {
+        statusBanner.classList.remove('hidden');
+        refundedBanner.classList.remove('hidden');
+        cancelBtn.classList.add('hidden');
+    } else {
+        cancelBtn.classList.remove('hidden');
+        cancelBtn.onclick = () => window.cancelOrder(openOrderId);
+    }
+
+    // Calculate and show remaining time (only for pending orders)
+    if (order.status === 'pending') {
+        const elapsed = Math.floor((Date.now() - order.timestamp) / 1000);
+        const remaining = Math.max(0, 900 - elapsed);
+        document.getElementById('modalTimer').innerText =
+            `${Math.floor(remaining / 60)}:${(remaining % 60).toString().padStart(2, '0')}`;
+    } else {
+        // For completed/cancelled orders, show completion time
+        document.getElementById('modalTimer').innerText = '✓';
+    }
+
+    if (order.category === 'sms') {
+        smsM.classList.remove('hidden');
+        document.getElementById('displayPhone').innerText =
+            order.phoneNumber || 'Generating...';
+        document.getElementById('displayOtp').innerText =
+            order.otpCode || '⏳ Waiting for OTP...';
+    } else {
+        boostM.classList.remove('hidden');
+        document.getElementById('displayLink').innerText =
+            order.targetUrl || 'Processing...';
+        
+        // Show boost status
+        const statusText = document.getElementById('boostStatusText');
+        statusText.innerText = order.apiStatus || (order.status === 'pending' 
+            ? 'Broadcasting to network servers...' 
+            : 'Boost delivery in progress...');
+    }
+
+    // Auto-open if not already
+    const modal = document.getElementById('orderModal');
+    if (!modal.classList.contains('active')) {
+        modal.classList.add('active');
+    }
+}
+
+// ===================== CANCEL ORDER =====================
+window.cancelOrder = async (id) => {
+    const order = activeOrders.find(o => o.id === id);
+    if (!order) return;
+
+    if (!confirm(`Cancel order "${order.title}" and refund ₦${order.amount.toLocaleString()}?`)) {
+        return;
+    }
+
+    try {
+        // Clear intervals
+        clearInterval(order.interval);
+        clearInterval(order.polling);
+
+        // Refund the balance
+        await updateDoc(doc(db, "users", currentUserUid), {
+            balance: increment(order.amount)
+        });
+
+        // Mark as cancelled
+        await updateDoc(doc(db, "users", currentUserUid, "history", id), {
+            status: 'cancelled',
+            refund: true,
+            cancelledAt: Date.now(),
+            cancelReason: 'User cancelled'
+        });
+
+        showToast(`Order cancelled → ₦${order.amount.toLocaleString()} refunded`);
+        window.closeOrderModal();
+    } catch (err) {
+        console.error("Cancel error:", err);
+        showToast("Cancellation failed - contact support");
+    }
+}
+
+// ===================== UTIL =====================
+window.closeOrderModal = () => {
+    openOrderId = null;
+    currentViewedOrder = null;
+    document.getElementById('orderModal').classList.remove('active');
+};
+
+window.copyWallet = () => {
+    navigator.clipboard.writeText(userFullWallet);
+    showToast("Wallet copied");
+};
+
+window.copyRef = () => {
+    navigator.clipboard.writeText(userFullRef);
+    showToast("Reference copied");
+};
+
+window.copyTextFromElement = (id) => {
+    navigator.clipboard.writeText(document.getElementById(id).innerText);
+    showToast("Copied");
+};
+
+function showToast(msg) {
+    const toast = document.getElementById("toast");
+    toast.innerText = msg;
+    toast.className = "copy-toast show";
+
+    setTimeout(() => {
+        toast.className = "copy-toast";
+    }, 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloutiva | Top Up Wallet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .pill-nav { background: rgba(15, 15, 20, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body { background-color: #050507; color: white; }
+        select option { background-color: #0f0f14; color: white; }
+        .token-card.active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .token-logo { width: 24px; height: 24px; object-fit: contain; }
+    </style>
+</head>
+<body class="font-sans antialiased pb-32">
+
+    <header class="px-6 py-8 flex items-center gap-4 max-w-2xl mx-auto w-full">
+        <a href="dashboard.html" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+            <i class="fa-solid fa-chevron-left text-sm"></i>
+        </a>
+        <h1 class="text-2xl font-black tracking-tighter uppercase">Add Funds</h1>
+    </header>
+
+    <main class="px-6 max-w-2xl mx-auto w-full space-y-6">
+        
+        <div id="methodSelector" class="space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">Choose Payment Method</h2>
+            
+            <button onclick="showStep('step1')" class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 hover:border-blue-500 transition group text-left">
+                <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition">
+                    <i class="fa-brands fa-ethereum text-2xl text-blue-500"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold">Pay with Crypto</h3>
+                    <p class="text-xs text-slate-500">BTC, ETH, BNB, USDT, USDC</p>
+                </div>
+                <i class="fa-solid fa-chevron-right ml-auto text-slate-700"></i>
+            </button>
+
+            <div class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 opacity-40 grayscale cursor-not-allowed relative overflow-hidden">
+                <div class="absolute top-4 right-4 bg-purple-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Coming Soon</div>
+                <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-building-columns text-2xl text-purple-500"></i>
+                </div>
+                <div class="text-left">
+                    <h3 class="font-bold">Local Currency</h3>
+                    <p class="text-xs text-slate-500">Bank Transfer / Card (NGN)</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="step1" class="hidden space-y-6">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">1. Enter Deposit Amount</h2>
+            <div class="glass-card rounded-[2.5rem] p-8 space-y-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Naira Amount (₦)</label>
+                    <input type="number" id="topupAmount" placeholder="Min: ₦8,500 ($5)" class="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-xl font-bold focus:outline-none focus:border-blue-500 transition">
+                    <div class="flex justify-between px-2">
+                        <p id="usdValue" class="text-xs text-blue-400 font-bold">≈ $0.00 USD</p>
+                        <p class="text-[10px] text-slate-500 italic">Fee: $0.50 (flat)</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/10">
+                    <p class="text-[10px] text-blue-300 leading-relaxed">
+                        <i class="fa-solid fa-circle-info mr-1"></i>
+                        Min deposit is <b>$5.00</b>. Deposits below this will <b>NOT</b> reflect. A processing fee of <b>$0.50</b> applies per transaction.
+                    </p>
+                </div>
+
+                <button onclick="nextStep()" id="continueBtn" class="w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-xl shadow-blue-500/20 active:scale-95 transition">
+                    Continue to Assets
+                </button>
+            </div>
+        </div>
+
+        <div id="step2" class="hidden space-y-6">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">2. Choose Token & Deposit</h2>
+            
+            <div class="grid grid-cols-2 gap-3" id="tokenList">
+                <button onclick="selectToken('BNB', 'BEP20', 'https://cryptologos.cc/logos/bnb-bnb-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                    <img src="https://cryptologos.cc/logos/bnb-bnb-logo.svg" class="token-logo" alt="BNB">
+                    <div class="text-left"><p class="text-[10px] font-bold">BNB</p><p class="text-[8px] text-slate-500 uppercase">BEP20</p></div>
+                </button>
+                <button onclick="selectToken('ETH', 'ERC20', 'https://cryptologos.cc/logos/ethereum-eth-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                    <img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg" class="token-logo" alt="ETH">
+                    <div class="text-left"><p class="text-[10px] font-bold">ETH</p><p class="text-[8px] text-slate-500 uppercase">ERC20</p></div>
+                </button>
+                <button onclick="selectToken('USDT', 'BEP20', 'https://cryptologos.cc/logos/tether-usdt-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                    <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" class="token-logo" alt="USDT">
+                    <div class="text-left"><p class="text-[10px] font-bold">USDT</p><p class="text-[8px] text-slate-500 uppercase">BEP20</p></div>
+                </button>
+                <button onclick="selectToken('USDT', 'ERC20', 'https://cryptologos.cc/logos/tether-usdt-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                    <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" class="token-logo" alt="USDT">
+                    <div class="text-left"><p class="text-[10px] font-bold">USDT</p><p class="text-[8px] text-slate-500 uppercase">ERC20</p></div>
+                </button>
+                <button onclick="selectToken('USDC', 'BEP20', 'https://cryptologos.cc/logos/usd-coin-usdc-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                    <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.svg" class="token-logo" alt="USDC">
+                    <div class="text-left"><p class="text-[10px] font-bold">USDC</p><p class="text-[8px] text-slate-500 uppercase">BEP20</p></div>
+                </button>
+                <button onclick="selectToken('USDC', 'ERC20', 'https://cryptologos.cc/logos/usd-coin-usdc-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                    <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.svg" class="token-logo" alt="USDC">
+                    <div class="text-left"><p class="text-[10px] font-bold">USDC</p><p class="text-[8px] text-slate-500 uppercase">ERC20</p></div>
+                </button>
+            </div>
+
+            <div id="depositDetails" class="hidden glass-card rounded-[2.5rem] p-8 text-center space-y-6 animate-in slide-in-from-bottom duration-500">
+                <div class="space-y-4">
+                    <h3 id="selectedHeader" class="text-sm font-black uppercase">Send USDT (ERC20)</h3>
+                    <div class="w-40 h-40 bg-white rounded-3xl mx-auto p-4 flex items-center justify-center">
+                        <img id="qrImg" src="" alt="QR Code" class="w-full h-full">
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="text-left">
+                        <p class="text-[9px] font-bold text-slate-500 uppercase mb-2 ml-2">Personal Deposit Address</p>
+                        <div class="flex items-center gap-2 bg-black/40 border border-white/5 p-4 rounded-2xl">
+                            <code id="userWallet" class="text-[10px] text-blue-400 break-all flex-1">0x00...000</code>
+                            <button onclick="copyWallet()" class="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-left">
+                        <p class="text-[9px] font-bold text-orange-500 uppercase mb-2 ml-2">Required Memo / Ref ID</p>
+                        <div class="flex items-center gap-2 bg-orange-500/5 border border-orange-500/10 p-4 rounded-2xl">
+                            <code id="memoId" class="text-[10px] text-orange-400 break-all flex-1">Loading...</code>
+                            <button onclick="copyMemo()" class="w-10 h-10 bg-orange-600/20 text-orange-500 rounded-xl flex items-center justify-center">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="confirmSent()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold">I Have Sent Payment</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="successModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div>
+        <div class="glass-card w-full max-w-sm rounded-[3rem] p-10 relative z-10 text-center space-y-6">
+            <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto text-green-500 text-3xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black uppercase">Scanning Network</h3>
+                <p class="text-xs text-slate-500">Our listener is scanning the blockchain. Funds appear after network confirmations (approx 5-15 mins).</p>
+            </div>
+            <button onclick="window.location.href='dashboard.html'" class="w-full py-4 bg-white/5 rounded-2xl font-bold">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { protectPage, db, HERO_SMS_CONFIG, getUserIdHex } from './auth-guard.js';
+        import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        let userUid = "";
+        let custodialAddress = "";
+        const NGN_RATE = HERO_SMS_CONFIG.rate || 1600;
+
+        protectPage((userData) => {
+            userUid = userData.uid;
+            custodialAddress = userData.walletAddress || "0x93eE44658c85073cD81Db941017E66b43B020c59";
+            document.getElementById('userWallet').innerText = custodialAddress;
+            document.getElementById('memoId').innerText = getUserIdHex(userUid);
+            // Pre-generate QR
+            document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${custodialAddress}`;
+        });
+
+        window.showStep = (stepId) => {
+            document.getElementById('methodSelector').classList.add('hidden');
+            document.getElementById(stepId).classList.remove('hidden');
+        };
+
+        document.getElementById('topupAmount').addEventListener('input', (e) => {
+            const val = e.target.value;
+            const usd = val / NGN_RATE;
+            document.getElementById('usdValue').innerText = `≈ $${usd.toFixed(2)} USD`;
+        });
+
+        window.nextStep = () => {
+            const amount = document.getElementById('topupAmount').value;
+            if (!amount || (amount / NGN_RATE) < 5) {
+                return alert("Minimum deposit is $5.00 USD (Approx. ₦" + (5 * NGN_RATE).toLocaleString() + ")");
+            }
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+        };
+
+        window.selectToken = (name, net, logoUrl) => {
+            // UI Selection
+            document.querySelectorAll('.token-card').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Update Details
+            document.getElementById('selectedHeader').innerHTML = `Send ${name} <span class="text-blue-500">(${net})</span>`;
+            document.getElementById('depositDetails').classList.remove('hidden');
+            
+            // Smooth scroll to details
+            document.getElementById('depositDetails').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.copyWallet = () => {
+            navigator.clipboard.writeText(custodialAddress);
+            alert("Address Copied!");
+        };
+
+        window.copyMemo = () => {
+            navigator.clipboard.writeText(document.getElementById('memoId').innerText);
+            alert("Reference ID Copied! Important for identification.");
+        };
+
+        window.confirmSent = async () => {
+            const amount = document.getElementById('topupAmount').value;
+            try {
+                const historyRef = collection(db, "users", userUid, "history");
+                await addDoc(historyRef, {
+                    category: 'topup',
+                    amount: parseFloat(amount),
+                    title: `Crypto Deposit Pending`,
+                    method: 'Blockchain',
+                    status: 'pending',
+                    timestamp: Date.now(),
+                    reference: document.getElementById('memoId').innerText
+                });
+                document.getElementById('successModal').classList.remove('hidden');
+            } catch (err) {
+                alert("Error logging request.");
+            }
+        };
+    </script>
+</body>
+</html>

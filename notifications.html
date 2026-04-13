@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloutiva | Notifications</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .pill-nav { background: rgba(15, 15, 20, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.4s ease; }
+        .nav-hidden { transform: translate(-50%, 150%); }
+        body { background-color: #050507; color: white; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="font-sans antialiased pb-32">
+
+    <header class="px-6 pt-12 pb-6 max-w-2xl mx-auto w-full flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-black tracking-tight">Activity</h1>
+            <p class="text-slate-500 text-sm">Updates on your boosts & numbers.</p>
+        </div>
+        <button id="markReadBtn" class="text-xs font-bold text-blue-400 hover:text-blue-300 transition flex items-center gap-2 pb-1">
+            <i class="fa-solid fa-check-double"></i> Mark all read
+        </button>
+    </header>
+
+    <main class="px-6 max-w-2xl mx-auto w-full">
+        <div id="notificationList" class="space-y-4">
+            <div class="text-center py-10 text-slate-500 animate-pulse text-sm font-bold uppercase tracking-widest">Checking for updates...</div>
+        </div>
+    </main>
+
+    <div id="bottomNav" class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] pill-nav rounded-full px-4 py-3 flex justify-between items-center shadow-2xl">
+        <a href="dashboard.html" class="p-3 text-slate-400 hover:text-white transition-all">
+            <i class="fa-solid fa-house text-lg"></i>
+        </a>
+        <a href="create-order.html" class="p-3 text-slate-400 hover:text-white transition-all">
+            <i class="fa-solid fa-plus text-lg"></i>
+        </a>
+        <a href="profile.html" class="p-3 text-slate-400 hover:text-white transition-all">
+            <i class="fa-solid fa-circle-user text-lg"></i>
+        </a>
+    </div>
+
+    <script type="module">
+        import { protectPage, db } from './auth-guard.js';
+        import { collection, query, orderBy, onSnapshot, doc, updateDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        let currentUserId = null;
+
+        protectPage((userData) => {
+            currentUserId = userData.uid;
+            const notifRef = collection(db, "users", userData.uid, "notifications");
+            const q = query(notifRef, orderBy("timestamp", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderNotifications(notifications);
+            });
+        });
+
+        function renderNotifications(data) {
+            const container = document.getElementById('notificationList');
+
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card rounded-[2.5rem] p-16 flex flex-col items-center justify-center text-center space-y-4">
+                        <div class="relative">
+                            <div class="w-20 h-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-2">
+                                <i class="fa-solid fa-bell-slash text-slate-600 text-3xl"></i>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-slate-300">All caught up!</h4>
+                            <p class="text-slate-500 text-xs max-w-[220px] mx-auto leading-relaxed">
+                                When you start an order or top up your wallet, we'll notify you here.
+                            </p>
+                        </div>
+                        <button onclick="location.href='create-order.html'" class="mt-2 text-sm font-bold bg-white/5 px-6 py-2.5 rounded-full hover:bg-white/10 transition border border-white/5">
+                            Start an Order
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = data.map(item => `
+                <div class="glass-card p-5 rounded-3xl flex items-start gap-4 relative group transition-all ${item.read ? 'opacity-60' : 'border-l-4 border-l-blue-500'}">
+                    <div class="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center shrink-0">
+                        <i class="fa-solid ${getIcon(item.type)} ${item.read ? 'text-slate-500' : 'text-blue-400'}"></i>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <div class="flex justify-between items-start">
+                            <h5 class="text-sm font-bold ${item.read ? 'text-slate-400' : 'text-white'}">${item.title}</h5>
+                            <span class="text-[9px] font-bold text-slate-600 uppercase whitespace-nowrap">${formatTime(item.timestamp)}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">${item.message}</p>
+                    </div>
+                    ${!item.read ? '<div class="absolute top-5 right-5 w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function getIcon(type) {
+            switch(type) {
+                case 'order': return 'fa-rocket';
+                case 'topup': return 'fa-wallet';
+                case 'success': return 'fa-circle-check';
+                default: return 'fa-bell';
+            }
+        }
+
+        function formatTime(timestamp) {
+            if(!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Mark all as read logic
+        document.getElementById('markReadBtn').addEventListener('click', async () => {
+            if (!currentUserId) return;
+            const notifRef = collection(db, "users", currentUserId, "notifications");
+            const snapshot = await getDocs(notifRef);
+            
+            const batch = writeBatch(db);
+            snapshot.docs.forEach((d) => {
+                if (!d.data().read) {
+                    batch.update(d.ref, { read: true });
+                }
+            });
+            await batch.commit();
+        });
+
+    </script>
+
+    <script>
+        // Scroll-to-Hide Navbar Logic
+        let lastScrollTop = 0;
+        const bottomNav = document.getElementById('bottomNav');
+        window.addEventListener("scroll", function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                bottomNav.classList.add('nav-hidden');
+            } else {
+                bottomNav.classList.remove('nav-hidden');
+            }
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+        }, false);
+    </script>
+</body>
+</html>

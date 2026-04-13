@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloutiva | Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .pill-nav { background: rgba(15, 15, 20, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.4s ease; }
+        .nav-hidden { transform: translate(-50%, 150%); }
+        body { background-color: #050507; color: white; }
+        .stat-card { background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%); }
+        
+        /* Toast Animation */
+        #toast-container { fixed top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; pointer-events: none; }
+        .toast { background: rgba(20, 20, 25, 0.9); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; border-radius: 16px; margin-bottom: 10px; backdrop-filter: blur(10px); animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body class="font-sans antialiased pb-32">
+
+    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-xs space-y-2"></div>
+
+    <header class="px-6 pt-12 pb-8 max-w-2xl mx-auto w-full text-center">
+        <div class="relative inline-block mb-4">
+            <div class="w-24 h-24 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-3xl p-1 shadow-2xl">
+                <div class="w-full h-full bg-[#0A0A0C] rounded-[1.3rem] flex items-center justify-center">
+                    <i class="fa-solid fa-user-astronaut text-3xl text-white"></i>
+                </div>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 border-4 border-[#050507] rounded-full"></div>
+        </div>
+        <h1 id="profName" class="text-2xl font-black tracking-tight">Synchronizing...</h1>
+        <p id="profEmail" class="text-slate-500 text-sm">---</p>
+        
+        <div class="flex justify-center gap-4 mt-6">
+            <a href="https://t.me/cloutiva" class="w-10 h-10 glass-card rounded-full flex items-center justify-center hover:text-blue-400 transition"><i class="fa-brands fa-telegram"></i></a>
+            <a href="https://tiktok.com/@cloutiva" class="w-10 h-10 glass-card rounded-full flex items-center justify-center hover:text-pink-500 transition"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="https://x.com/cloutiva" class="w-10 h-10 glass-card rounded-full flex items-center justify-center hover:text-white transition"><i class="fa-brands fa-twitter"></i></a>
+        </div>
+    </header>
+
+    <main class="px-6 max-w-2xl mx-auto w-full space-y-6">
+        
+        <section class="grid grid-cols-2 gap-4">
+            <div class="glass-card stat-card p-5 rounded-[2rem]">
+                <p class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest">Total Spent</p>
+                <h3 id="statSpent" class="text-xl font-black">₦0.00</h3>
+                <p class="text-[10px] text-green-400 font-bold mt-2"><i class="fa-solid fa-circle-check mr-1"></i>Verified</p>
+            </div>
+            <div class="glass-card stat-card p-5 rounded-[2rem]">
+                <p class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest">Total Boosts</p>
+                <h3 id="statOrders" class="text-xl font-black">0</h3>
+                <p id="statActive" class="text-[10px] text-purple-400 font-bold mt-2 tracking-wide">ACTIVE: 0</p>
+            </div>
+        </section>
+
+        <section class="space-y-3">
+            <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 ml-2">Control Center</h2>
+            <div class="glass-card rounded-[2.5rem] overflow-hidden">
+                <button onclick="openModal('name')" class="w-full px-6 py-5 flex items-center justify-between hover:bg-white/5 transition border-b border-white/5">
+                    <div class="flex items-center gap-4">
+                        <i class="fa-solid fa-id-card text-blue-400"></i>
+                        <span class="text-sm font-semibold">Update Account Name</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+                </button>
+                <button onclick="openModal('password')" class="w-full px-6 py-5 flex items-center justify-between hover:bg-white/5 transition border-b border-white/5">
+                    <div class="flex items-center gap-4">
+                        <i class="fa-solid fa-key text-purple-400"></i>
+                        <span class="text-sm font-semibold">Change Security Password</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
+                </button>
+                <div class="w-full px-6 py-5 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <i class="fa-solid fa-bell text-orange-400"></i>
+                        <span class="text-sm font-semibold">Device Notifications</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input id="notifToggle" type="checkbox" class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <button id="logoutBtn" class="w-full py-5 flex items-center justify-center gap-2 glass-card rounded-3xl text-red-500 font-bold text-sm hover:bg-red-500/10 transition border border-red-500/20">
+            <i class="fa-solid fa-power-off"></i>
+            Terminate Session
+        </button>
+    </main>
+
+    <div id="settingsModal" class="fixed inset-0 z-[300] hidden flex items-center justify-center px-6">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="closeModal()"></div>
+        <div class="glass-card w-full max-w-sm rounded-[2.5rem] p-8 relative z-10 border border-white/10">
+            <h3 id="modalHeader" class="text-xl font-black mb-2">Update Settings</h3>
+            <p id="modalSub" class="text-xs text-slate-500 mb-6 font-bold uppercase tracking-widest">Action Required</p>
+            
+            <div id="nameInputGroup" class="hidden">
+                <input type="text" id="newNameInput" placeholder="Enter full name" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-sm focus:outline-none focus:border-blue-500 mb-4">
+            </div>
+            
+            <p id="passwordWarning" class="hidden text-sm text-slate-400 mb-6">A secure link will be sent to your registered email to reset your credentials.</p>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-4 bg-white/5 rounded-2xl font-bold text-xs">Cancel</button>
+                <button id="modalConfirmBtn" class="flex-1 py-4 bg-blue-600 rounded-2xl font-bold text-xs shadow-lg shadow-blue-600/20">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bottomNav" class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] pill-nav rounded-full px-4 py-3 flex justify-between items-center shadow-2xl">
+        <a href="dashboard.html" class="p-3 text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-house text-lg"></i></a>
+        <a href="create-order.html" class="p-3 text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-plus text-lg"></i></a>
+        <a href="profile.html" class="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2.5 rounded-full transition-all group">
+            <i class="fa-solid fa-circle-user text-white"></i>
+            <span class="text-xs font-bold text-white">Profile</span>
+        </a>
+    </div>
+
+    <script type="module">
+        import { protectPage, auth, db } from './auth-guard.js';
+        import { doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        let currentUid = null;
+
+        // Toast Utility
+        const showToast = (msg) => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast text-xs font-bold text-white text-center';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        };
+
+        // 1. Setup Data Sync
+        protectPage((userData) => {
+            currentUid = userData.uid;
+            document.getElementById('profName').innerText = userData.name || "Anonymous";
+            document.getElementById('profEmail').innerText = userData.email;
+            document.getElementById('statSpent').innerText = `₦${(userData.totalSpent || 0).toLocaleString()}`;
+            document.getElementById('statOrders').innerText = userData.totalOrders || 0;
+            document.getElementById('statActive').innerText = `ACTIVE: ${userData.activeOrders || 0}`;
+            document.getElementById('notifToggle').checked = userData.notificationsEnabled ?? false;
+        });
+
+        // 2. Modal Controls
+        window.openModal = (type) => {
+            const modal = document.getElementById('settingsModal');
+            const nameGroup = document.getElementById('nameInputGroup');
+            const passWarn = document.getElementById('passwordWarning');
+            const header = document.getElementById('modalHeader');
+            const confirmBtn = document.getElementById('modalConfirmBtn');
+
+            modal.classList.remove('hidden');
+            nameGroup.classList.add('hidden');
+            passWarn.classList.add('hidden');
+
+            if (type === 'name') {
+                header.innerText = "Update Name";
+                nameGroup.classList.remove('hidden');
+                confirmBtn.onclick = async () => {
+                    const name = document.getElementById('newNameInput').value;
+                    if(name.length < 3) return showToast("Name too short!");
+                    await updateDoc(doc(db, "users", currentUid), { name });
+                    showToast("Profile name updated!");
+                    closeModal();
+                };
+            } else if (type === 'password') {
+                header.innerText = "Reset Password";
+                passWarn.classList.remove('hidden');
+                confirmBtn.onclick = async () => {
+                    try {
+                        await sendPasswordResetEmail(auth, auth.currentUser.email);
+                        showToast("Reset link sent to your email!");
+                        closeModal();
+                    } catch (e) { showToast(e.message); }
+                };
+            }
+        };
+
+        window.closeModal = () => document.getElementById('settingsModal').classList.add('hidden');
+
+        // 3. Notification Logic
+        document.getElementById('notifToggle').addEventListener('change', async (e) => {
+            const isEnabled = e.target.checked;
+            
+            if (isEnabled && Notification.permission !== 'granted') {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    e.target.checked = false;
+                    return showToast("Browser permission denied.");
+                }
+            }
+            
+            await updateDoc(doc(db, "users", currentUid), { notificationsEnabled: isEnabled });
+            showToast(isEnabled ? "Device notifications active" : "Notifications disabled");
+
+            if (isEnabled) {
+                new Notification("Cloutiva", { body: "You will now receive order updates on this device." });
+            }
+        });
+
+        // 4. Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if(window.logoutUser) window.logoutUser();
+        });
+    </script>
+</body>
+</html>

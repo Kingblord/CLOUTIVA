@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloutiva | Join the Elite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .auth-gradient { background: radial-gradient(circle at top right, rgba(0, 123, 255, 0.1), transparent), radial-gradient(circle at bottom left, rgba(160, 32, 240, 0.1), transparent); }
+        .strength-bar { transition: width 0.3s ease, background-color 0.3s ease; }
+    </style>
+</head>
+<body class="bg-[#0A0A0C] text-white font-sans antialiased min-h-screen flex items-center justify-center p-6 auth-gradient">
+
+    <div class="w-full max-w-md">
+        <div class="flex flex-col items-center mb-8">
+            <a href="index.html" class="flex items-center gap-3 hover:opacity-80 transition">
+                <img src="logo.png" alt="Cloutiva" class="w-16 h-16 rounded-2xl shadow-2xl">
+                <span class="text-3xl font-black uppercase tracking-tighter">Cloutiva</span>
+            </a>
+        </div>
+
+        <div class="glass rounded-3xl p-8 shadow-2xl">
+            <div class="flex bg-white/5 p-1 rounded-xl mb-8">
+                <button id="loginTab" onclick="switchTab('login')" class="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                    Login
+                </button>
+                <button id="signupTab" onclick="switchTab('signup')" class="flex-1 py-2.5 rounded-lg font-bold text-sm transition-all duration-300 text-slate-400 hover:text-white">
+                    Sign Up
+                </button>
+            </div>
+
+            <h2 id="formTitle" class="text-2xl font-bold mb-2">Welcome Back</h2>
+            <p id="formSub" class="text-slate-400 text-sm mb-8">Enter your credentials to access your dashboard.</p>
+
+            <form id="authForm" class="space-y-5">
+                <div id="nameField" class="hidden">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Full Name</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input type="text" placeholder="John Doe" class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 focus:border-blue-500 focus:outline-none transition text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Email Address</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input type="email" placeholder="name@company.com" class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 focus:border-blue-500 focus:outline-none transition text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between">
+                        <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Password</label>
+                        <a href="#" id="forgotPass" class="text-xs text-blue-400 hover:underline">Forgot?</a>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input id="passwordInput" type="password" placeholder="••••••••" class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-12 focus:border-blue-500 focus:outline-none transition text-sm">
+                        <button type="button" onclick="togglePassword('passwordInput', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition">
+                            <i class="fa-solid fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="strengthContainer" class="hidden mt-3">
+                        <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div id="strengthBar" class="strength-bar h-full w-0 bg-red-500"></div>
+                        </div>
+                        <p id="strengthText" class="text-[10px] uppercase font-bold mt-2 text-slate-500">Weak Password</p>
+                    </div>
+                </div>
+
+                <div id="confirmField" class="hidden">
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Confirm Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-shield-check absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                        <input id="confirmInput" type="password" placeholder="••••••••" class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-12 focus:border-blue-500 focus:outline-none transition text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-4 rounded-xl font-bold hover:opacity-90 transition shadow-xl shadow-blue-500/10 mt-4">
+                    <span id="btnText">Sign In to Cloutiva</span>
+                </button>
+            </form>
+
+            <p class="text-center text-slate-500 text-xs mt-8">
+                By continuing, you agree to Cloutiva's <br>
+                <a href="#" class="text-white hover:underline">Terms of Service</a> and <a href="#" class="text-white hover:underline">Privacy Policy</a>.
+            </p>
+        </div>
+    </div>
+
+ <script type="module">
+    // 1. Correct Browser Imports (Using standard Firebase CDN)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+        getFirestore, 
+        doc, 
+        setDoc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 2. Paste your Config here directly (or import if using a bundler)
+    // Since we are in a single HTML file, defining it here is safest for the browser
+    const firebaseConfig = {
+  apiKey: "AIzaSyDIdOyW4TfGO4K0hdOA4_drvYPZ_-FywG0",
+  authDomain: "cloutiva-app.firebaseapp.com",
+  projectId: "cloutiva-app",
+  storageBucket: "cloutiva-app.firebasestorage.app",
+  messagingSenderId: "898248697277",
+  appId: "1:898248697277:web:8bcdeabc3c91618ae15ed4",
+  measurementId: "G-JTCSKX7FG5"
+};
+
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentMode = 'login';
+
+    // 3. ATTACH TO WINDOW IMMEDIATELY (Fixes the "not defined" error)
+    window.switchTab = (mode) => {
+        currentMode = mode;
+        const loginTab = document.getElementById('loginTab');
+        const signupTab = document.getElementById('signupTab');
+        const nameField = document.getElementById('nameField');
+        const confirmField = document.getElementById('confirmField');
+        const strengthContainer = document.getElementById('strengthContainer');
+        const btnText = document.getElementById('btnText');
+        const formTitle = document.getElementById('formTitle');
+        const formSub = document.getElementById('formSub');
+        const forgotLink = document.getElementById('forgotPass');
+
+        if (mode === 'signup') {
+            loginTab.className = "flex-1 py-2.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white";
+            signupTab.className = "flex-1 py-2.5 rounded-lg font-bold text-sm transition bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg";
+            nameField?.classList.remove('hidden');
+            confirmField?.classList.remove('hidden');
+            strengthContainer?.classList.remove('hidden');
+            forgotLink?.classList.add('hidden');
+            formTitle.innerText = "Create Account";
+            formSub.innerText = "Join 10k+ users scaling their presence.";
+            btnText.innerText = "Start Growing Now";
+        } else {
+            signupTab.className = "flex-1 py-2.5 rounded-lg font-bold text-sm transition text-slate-400 hover:text-white";
+            loginTab.className = "flex-1 py-2.5 rounded-lg font-bold text-sm transition bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg";
+            nameField?.classList.add('hidden');
+            confirmField?.classList.add('hidden');
+            strengthContainer?.classList.add('hidden');
+            forgotLink?.classList.remove('hidden');
+            formTitle.innerText = "Welcome Back";
+            formSub.innerText = "Enter your credentials to access your dashboard.";
+            btnText.innerText = "Sign In to Cloutiva";
+        }
+    };
+
+    window.togglePassword = (id, btn) => {
+        const input = document.getElementById(id);
+        const icon = btn.querySelector('i');
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    };
+
+    // 4. Registration Logic (Moved inside for direct access to db/auth)
+    async function registerUser(email, password, fullName) {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const userRef = doc(db, "users", user.uid);
+            
+            await setDoc(userRef, {
+                uid: user.uid,
+                name: fullName,
+                email: email,
+                balance: 0.00,
+                totalSpent: 0.00,
+                totalOrders: 0,
+                createdAt: new Date().toISOString()
+            });
+            return { success: true };
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    // 5. Handle Form Submit
+    const authForm = document.getElementById('authForm');
+    authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = authForm.querySelector('button[type="submit"]');
+        const email = authForm.querySelector('input[type="email"]').value;
+        const password = document.getElementById('passwordInput').value;
+
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Processing...";
+
+        try {
+            if (currentMode === 'signup') {
+                const fullName = authForm.querySelector('#nameField input').value;
+                const res = await registerUser(email, password, fullName);
+                if (!res.success) throw new Error(res.message);
+            } else {
+                await signInWithEmailAndPassword(auth, email, password);
+            }
+            window.location.href = 'dashboard.html';
+        } catch (error) {
+            alert(error.message);
+            submitBtn.disabled = false;
+            submitBtn.innerText = currentMode === 'signup' ? "Start Growing Now" : "Sign In to Cloutiva";
+        }
+    });
+
+    // Handle URL Params for initial tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode') || 'login';
+    window.switchTab(mode);
+
+</script>
+
+
+
+</body>
+</html>

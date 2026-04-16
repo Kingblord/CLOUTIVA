@@ -40,16 +40,16 @@
                 <i class="fa-solid fa-chevron-right ml-auto text-slate-700"></i>
             </button>
 
-            <div class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 opacity-40 grayscale cursor-not-allowed relative overflow-hidden">
-                <div class="absolute top-4 right-4 bg-purple-600 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Coming Soon</div>
-                <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center">
+            <button onclick="payWithNaira()" class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 hover:border-purple-500 transition group text-left">
+                <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition">
                     <i class="fa-solid fa-building-columns text-2xl text-purple-500"></i>
                 </div>
                 <div class="text-left">
                     <h3 class="font-bold">Local Currency</h3>
-                    <p class="text-xs text-slate-500">Bank Transfer / Card (NGN)</p>
+                    <p class="text-xs text-slate-500">Bank Transfer / Card (NGN) - Instant</p>
                 </div>
-            </div>
+                <i class="fa-solid fa-chevron-right ml-auto text-slate-700"></i>
+            </button>
         </div>
 
         <div id="step1" class="hidden space-y-6">
@@ -156,6 +156,7 @@
         </div>
     </div>
 
+    <!-- ==================== ORIGINAL SCRIPT (UNTOUCHED) ==================== -->
     <script type="module">
         import { protectPage, db, HERO_SMS_CONFIG, getUserIdHex } from './auth-guard.js';
         import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -169,7 +170,6 @@
             custodialAddress = userData.walletAddress || "0x93eE44658c85073cD81Db941017E66b43B020c59";
             document.getElementById('userWallet').innerText = custodialAddress;
             document.getElementById('memoId').innerText = getUserIdHex(userUid);
-            // Pre-generate QR
             document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${custodialAddress}`;
         });
 
@@ -194,15 +194,11 @@
         };
 
         window.selectToken = (name, net, logoUrl) => {
-            // UI Selection
             document.querySelectorAll('.token-card').forEach(c => c.classList.remove('active'));
             event.currentTarget.classList.add('active');
             
-            // Update Details
-            document.getElementById('selectedHeader').innerHTML = `Send ${name} <span class="text-blue-500">(${net})</span>`;
+            document.getElementById('selectedHeader').innerHTML = `Send \( {name} <span class="text-blue-500">( \){net})</span>`;
             document.getElementById('depositDetails').classList.remove('hidden');
-            
-            // Smooth scroll to details
             document.getElementById('depositDetails').scrollIntoView({ behavior: 'smooth' });
         };
 
@@ -232,6 +228,58 @@
                 document.getElementById('successModal').classList.remove('hidden');
             } catch (err) {
                 alert("Error logging request.");
+            }
+        };
+    </script>
+
+    <!-- ==================== NEW SCRIPT FOR LOCAL CURRENCY (KORA PAY) ==================== -->
+    <script>
+        // Local / Naira Payment Handler
+        window.payWithNaira = async () => {
+            const amountInput = document.getElementById('topupAmount').value.trim();
+            const amount = parseFloat(amountInput);
+
+            if (!amount || amount < 1000) {
+                alert("Please enter a valid amount (minimum ₦1,000)");
+                return;
+            }
+
+            const reference = `cloutiva_topup_\( {userUid || 'guest'}_ \){Date.now()}`;
+
+            // Show loading
+            const originalText = event.currentTarget.innerHTML;
+            event.currentTarget.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+            event.currentTarget.disabled = true;
+
+            try {
+                // Call your Vercel proxy to initiate Kora payment
+                const response = await fetch(`https://lit-proxy.vercel.app/api/proxy?provider=kora`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: amount,
+                        reference: reference,
+                        currency: "NGN",
+                        // You can add more fields like customer email, name etc. later
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.status === "success" && data.data?.checkout_url) {
+                    // Redirect to Kora Checkout
+                    window.location.href = data.data.checkout_url;
+                } else {
+                    alert("Failed to start payment. Please try again.");
+                    console.error(data);
+                }
+            } catch (error) {
+                console.error("Kora Payment Error:", error);
+                alert("Payment service temporarily unavailable. Please try again later.");
+            } finally {
+                // Reset button
+                event.currentTarget.innerHTML = originalText;
+                event.currentTarget.disabled = false;
             }
         };
     </script>

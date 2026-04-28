@@ -13,6 +13,14 @@
         select option { background-color: #0f0f14; color: white; }
         .token-card.active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
         .token-logo { width: 24px; height: 24px; object-fit: contain; }
+        .toast { background: rgba(20, 20, 25, 0.9); border: 1px solid rgba(255,255,255,0.1); padding: 12px 24px; border-radius: 16px; margin-bottom: 10px; backdrop-filter: blur(10px); animation: slideUp 0.3s ease-out; position: fixed; top: 20px; right: 20px; z-index: 10000; min-width: 300px; opacity: 0; transform: translateY(-20px); transition: all 0.3s ease; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast-success { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.1); }
+        .toast-error { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); }
+        .toast-info { border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.1); }
+        .toast-content { display: flex; justify-content: space-between; align-items: center; }
+        .toast-close { background: none; border: none; color: white; font-size: 20px; cursor: pointer; margin-left: 10px; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="font-sans antialiased pb-32">
@@ -29,7 +37,7 @@
         <div id="methodSelector" class="space-y-4">
             <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">Choose Payment Method</h2>
             
-            <button onclick="showStep('step1')" class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 hover:border-blue-500 transition group text-left">
+            <button onclick="selectMethod('crypto')" class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 hover:border-blue-500 transition group text-left">
                 <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition">
                     <i class="fa-brands fa-ethereum text-2xl text-blue-500"></i>
                 </div>
@@ -40,20 +48,18 @@
                 <i class="fa-solid fa-chevron-right ml-auto text-slate-700"></i>
             </button>
 
-            <!-- Activated Local Currency Button -->
-            <button onclick="startNairaPayment()" class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 hover:border-purple-500 transition group text-left">
+            <div onclick="selectMethod('korapay')" class="w-full p-6 glass-card rounded-[2rem] flex items-center gap-6 hover:border-purple-500 transition group text-left cursor-pointer">
                 <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition">
                     <i class="fa-solid fa-building-columns text-2xl text-purple-500"></i>
                 </div>
-                <div class="text-left">
+                <div>
                     <h3 class="font-bold">Local Currency</h3>
-                    <p class="text-xs text-slate-500">Bank Transfer / Card (NGN) - Instant</p>
+                    <p class="text-xs text-slate-500">Bank Transfer / Card (NGN)</p>
                 </div>
                 <i class="fa-solid fa-chevron-right ml-auto text-slate-700"></i>
-            </button>
+            </div>
         </div>
 
-        <!-- Existing Crypto Step 1 -->
         <div id="step1" class="hidden space-y-6">
             <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">1. Enter Deposit Amount</h2>
             <div class="glass-card rounded-[2.5rem] p-8 space-y-4">
@@ -79,58 +85,31 @@
             </div>
         </div>
 
-        <!-- New Naira Payment Step -->
-        <div id="nairaStep" class="hidden space-y-6">
-            <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">Local Currency Top Up (NGN)</h2>
-            <div class="glass-card rounded-[2.5rem] p-8 space-y-6">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">Amount (₦)</label>
-                    <input type="number" id="nairaAmount" placeholder="Minimum ₦5,100" class="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-xl font-bold focus:outline-none focus:border-purple-500 transition">
-                    <div class="flex justify-between px-2 text-xs">
-                        <p id="nairaFee" class="text-purple-400">Fee: ₦100</p>
-                        <p class="text-slate-500">Total: ₦0</p>
-                    </div>
-                </div>
-
-                <div class="bg-purple-500/5 rounded-2xl p-4 border border-purple-500/10">
-                    <p class="text-[10px] text-purple-300 leading-relaxed">
-                        <i class="fa-solid fa-circle-info mr-1"></i>
-                        Minimum payment is <b>₦5,000 + ₦100 fee</b>. Payment is instant via card or bank transfer.
-                    </p>
-                </div>
-
-                <button onclick="initiateKoraPayment()" class="w-full bg-purple-600 py-4 rounded-2xl font-bold shadow-xl shadow-purple-500/20 active:scale-95 transition">
-                    Pay with Kora (Card / Bank Transfer)
-                </button>
-            </div>
-        </div>
-
-        <!-- Existing Crypto Step 2 (Unchanged) -->
         <div id="step2" class="hidden space-y-6">
             <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">2. Choose Token & Deposit</h2>
             
             <div class="grid grid-cols-2 gap-3" id="tokenList">
-                <button onclick="selectToken('BNB', 'BEP20', 'https://cryptologos.cc/logos/bnb-bnb-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                <button onclick="selectToken('BNB', 'BEP20', 'https://cryptologos.cc/logos/bnb-bnb-logo.svg', event)" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
                     <img src="https://cryptologos.cc/logos/bnb-bnb-logo.svg" class="token-logo" alt="BNB">
                     <div class="text-left"><p class="text-[10px] font-bold">BNB</p><p class="text-[8px] text-slate-500 uppercase">BEP20</p></div>
                 </button>
-                <button onclick="selectToken('ETH', 'ERC20', 'https://cryptologos.cc/logos/ethereum-eth-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                <button onclick="selectToken('ETH', 'ERC20', 'https://cryptologos.cc/logos/ethereum-eth-logo.svg', event)" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
                     <img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg" class="token-logo" alt="ETH">
                     <div class="text-left"><p class="text-[10px] font-bold">ETH</p><p class="text-[8px] text-slate-500 uppercase">ERC20</p></div>
                 </button>
-                <button onclick="selectToken('USDT', 'BEP20', 'https://cryptologos.cc/logos/tether-usdt-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                <button onclick="selectToken('USDT', 'BEP20', 'https://cryptologos.cc/logos/tether-usdt-logo.svg', event)" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
                     <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" class="token-logo" alt="USDT">
                     <div class="text-left"><p class="text-[10px] font-bold">USDT</p><p class="text-[8px] text-slate-500 uppercase">BEP20</p></div>
                 </button>
-                <button onclick="selectToken('USDT', 'ERC20', 'https://cryptologos.cc/logos/tether-usdt-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                <button onclick="selectToken('USDT', 'ERC20', 'https://cryptologos.cc/logos/tether-usdt-logo.svg', event)" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
                     <img src="https://cryptologos.cc/logos/tether-usdt-logo.svg" class="token-logo" alt="USDT">
                     <div class="text-left"><p class="text-[10px] font-bold">USDT</p><p class="text-[8px] text-slate-500 uppercase">ERC20</p></div>
                 </button>
-                <button onclick="selectToken('USDC', 'BEP20', 'https://cryptologos.cc/logos/usd-coin-usdc-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                <button onclick="selectToken('USDC', 'BEP20', 'https://cryptologos.cc/logos/usd-coin-usdc-logo.svg', event)" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
                     <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.svg" class="token-logo" alt="USDC">
                     <div class="text-left"><p class="text-[10px] font-bold">USDC</p><p class="text-[8px] text-slate-500 uppercase">BEP20</p></div>
                 </button>
-                <button onclick="selectToken('USDC', 'ERC20', 'https://cryptologos.cc/logos/usd-coin-usdc-logo.svg')" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
+                <button onclick="selectToken('USDC', 'ERC20', 'https://cryptologos.cc/logos/usd-coin-usdc-logo.svg', event)" class="token-card glass-card p-4 rounded-3xl flex items-center gap-3 transition border border-transparent">
                     <img src="https://cryptologos.cc/logos/usd-coin-usdc-logo.svg" class="token-logo" alt="USDC">
                     <div class="text-left"><p class="text-[10px] font-bold">USDC</p><p class="text-[8px] text-slate-500 uppercase">ERC20</p></div>
                 </button>
@@ -169,9 +148,33 @@
                 <button onclick="confirmSent()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold">I Have Sent Payment</button>
             </div>
         </div>
+
+        <div id="stepLocal" class="hidden space-y-6">
+            <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 ml-2">2. Pay with Bank (NGN)</h2>
+            <div class="glass-card rounded-[2.5rem] p-8 space-y-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2">Customer Name</label>
+                        <input type="text" id="customerName" placeholder="John Doe" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-white focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-2">Customer Email</label>
+                        <input type="email" id="customerEmail" placeholder="john@example.com" class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-4 text-white focus:outline-none focus:border-purple-500 transition">
+                    </div>
+                    <div class="bg-purple-500/5 rounded-2xl p-4 border border-purple-500/10">
+                        <p class="text-[10px] text-purple-300 leading-relaxed">
+                            <i class="fa-solid fa-circle-info mr-1"></i>
+                            You'll be redirected to Korapay's secure checkout. Pay via Bank Transfer, Card, or Mobile Money.
+                        </p>
+                    </div>
+                </div>
+                <button onclick="initiateKorapayPayment()" id="korapayPayBtn" class="w-full bg-purple-600 py-4 rounded-2xl font-bold shadow-xl shadow-purple-500/20 active:scale-95 transition">
+                    Proceed with Local Payment
+                </button>
+            </div>
+        </div>
     </main>
 
-    <!-- Existing Success Modal (Unchanged) -->
     <div id="successModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6">
         <div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div>
         <div class="glass-card w-full max-w-sm rounded-[3rem] p-10 relative z-10 text-center space-y-6">
@@ -186,24 +189,139 @@
         </div>
     </div>
 
+    <!-- Bank Transfer Details Modal -->
+    <div id="bankTransferModal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-6">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-xl"></div>
+        <div class="glass-card w-full max-w-sm rounded-[3rem] p-8 relative z-10 text-center space-y-6 max-h-[90vh] overflow-y-auto">
+            <!-- Close Button -->
+            <button onclick="closePaymentModal()" class="absolute top-4 right-4 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg flex items-center justify-center text-white">
+                <i class="fa-solid fa-close"></i>
+            </button>
+
+            <!-- Header -->
+            <div class="text-left">
+                <h2 class="text-lg font-black uppercase mb-2">Bank Transfer Details</h2>
+                <p class="text-[11px] text-slate-400">Complete the transfer to receive your funds</p>
+            </div>
+
+            <!-- Amount Section -->
+            <div class="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/10 space-y-3 text-left">
+                <div>
+                    <p class="text-[9px] text-slate-400 uppercase mb-1">Topup Amount</p>
+                    <p class="text-xl font-black text-blue-300">₦<span id="modalTransferAmount">8,500</span></p>
+                </div>
+                <div>
+                    <p class="text-[9px] text-slate-400 uppercase mb-1">Amount to Pay (with fees)</p>
+                    <p class="text-sm font-bold text-slate-200">₦<span id="modalExpectedAmount">8,637.06</span></p>
+                </div>
+                <div class="pt-3 border-t border-blue-500/10 space-y-2">
+                    <div class="flex justify-between text-[9px]">
+                        <span class="text-slate-500">Fee:</span>
+                        <span class="text-slate-300">₦<span id="modalFee">127.50</span></span>
+                    </div>
+                    <div class="flex justify-between text-[9px]">
+                        <span class="text-slate-500">VAT (7.5%):</span>
+                        <span class="text-slate-300">₦<span id="modalVat">9.56</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Account Details -->
+            <div class="bg-purple-500/5 rounded-2xl p-4 border border-purple-500/10 space-y-3 text-left">
+                <p class="text-[10px] uppercase tracking-widest text-purple-400 font-bold">Bank Account</p>
+                
+                <div>
+                    <p class="text-[9px] text-slate-400 uppercase mb-2">Account Name</p>
+                    <p class="text-sm font-bold" id="modalAccountName">Korapay-LIT-CHKOUT</p>
+                </div>
+
+                <div>
+                    <p class="text-[9px] text-slate-400 uppercase mb-2">Account Number</p>
+                    <div class="flex gap-2">
+                        <code class="text-lg font-mono font-bold text-purple-300 flex-1" id="modalAccountNumber">5226855194</code>
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('modalAccountNumber').innerText); showToast('Account number copied!', 'success')" class="w-10 h-10 bg-purple-600/20 text-purple-400 rounded-lg flex items-center justify-center hover:bg-purple-600/30">
+                            <i class="fa-solid fa-copy text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-[9px] text-slate-400 uppercase mb-2">Bank Name</p>
+                    <p class="text-sm font-bold" id="modalBankName">Sterling bank</p>
+                </div>
+            </div>
+
+            <!-- Time Remaining -->
+            <div class="bg-orange-500/5 rounded-2xl p-4 border border-orange-500/10 text-left">
+                <p class="text-[9px] text-orange-400 uppercase font-bold mb-2">⏰ Time Remaining</p>
+                <p class="text-sm font-bold text-orange-200"><span id="modalTimeRemaining">60</span> minutes</p>
+                <p class="text-[9px] text-orange-300 mt-1">Expires at: <span id="modalExpiryTime">--:--</span></p>
+            </div>
+
+            <!-- Reference -->
+            <div class="bg-slate-500/5 rounded-2xl p-3 border border-slate-500/10 text-left">
+                <p class="text-[9px] text-slate-400 uppercase mb-2">Reference</p>
+                <code class="text-[10px] text-slate-300 break-all" id="modalReference">KPY-CM-DvDwHaRu62oVcTD</code>
+            </div>
+
+            <!-- Warning -->
+            <div class="bg-red-500/5 rounded-2xl p-4 border border-red-500/10">
+                <p class="text-[10px] text-red-300 leading-relaxed">
+                    <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                    Transfer the exact amount shown. Any deviation may cause the transaction to fail.
+                </p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3">
+                <button onclick="confirmKorapaySent()" class="w-full bg-green-600 hover:bg-green-500 py-4 rounded-2xl font-bold transition">
+                    ✓ I've Completed the Transfer
+                </button>
+                <button onclick="closePaymentModal()" class="w-full bg-white/10 hover:bg-white/20 py-3 rounded-2xl font-bold transition text-sm">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+            </div>
+           
+        </div>
+    </div>
+
     <script type="module">
         import { protectPage, db, HERO_SMS_CONFIG, getUserIdHex } from './auth-guard.js';
-        import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, addDoc, getDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // 🔑 KORAPAY PUBLIC KEY - Get from https://merchant.korapay.com/
+        const KORAPAY_PUBLIC_KEY = "pk_live_WYobfzhBfZ5r6DYMxh3LY6Z66iDvdzevUohtS3Ui"; // Replace with your actual public key
 
         let userUid = "";
         let custodialAddress = "";
-        const NGN_RATE = HERO_SMS_CONFIG.rate || 1210;
+        let selectedMethod = 'crypto';
+        let selectedKorapayReference = '';
+        const NGN_RATE = HERO_SMS_CONFIG.rate || 1600;
 
         protectPage((userData) => {
             userUid = userData.uid;
             custodialAddress = userData.walletAddress || "0x93eE44658c85073cD81Db941017E66b43B020c59";
             document.getElementById('userWallet').innerText = custodialAddress;
             document.getElementById('memoId').innerText = getUserIdHex(userUid);
+            document.getElementById('customerEmail').value = userData.email || '';
+            document.getElementById('customerName').value = userData.displayName || 'Cloutiva User';
             document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${custodialAddress}`;
         });
 
+        window.selectMethod = (method) => {
+            selectedMethod = method;
+            document.getElementById('methodSelector').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+        };
+
         window.showStep = (stepId) => {
             document.getElementById('methodSelector').classList.add('hidden');
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('stepLocal').classList.add('hidden');
             document.getElementById(stepId).classList.remove('hidden');
         };
 
@@ -216,29 +334,345 @@
         window.nextStep = () => {
             const amount = document.getElementById('topupAmount').value;
             if (!amount || (amount / NGN_RATE) < 5) {
-                return alert("Minimum deposit is $5.00 USD (Approx. ₦" + (5 * NGN_RATE).toLocaleString() + ")");
+                return showToast("Minimum deposit is $5.00 USD (Approx. ₦" + (5 * NGN_RATE).toLocaleString() + ")", 'error');
             }
+
             document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.remove('hidden');
+            if (selectedMethod === 'korapay') {
+                document.getElementById('stepLocal').classList.remove('hidden');
+            } else {
+                document.getElementById('step2').classList.remove('hidden');
+            }
         };
 
-        window.selectToken = (name, net, logoUrl) => {
+        let korapayPaymentData = {}; // Store payment data for later use
+
+        window.initiateKorapayPayment = async () => {
+            const amount = document.getElementById('topupAmount').value;
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerEmail = document.getElementById('customerEmail').value.trim();
+
+            if (!amount || (amount / NGN_RATE) < 5) {
+                return showToast("Minimum deposit is $5.00 USD (Approx. ₦" + (5 * NGN_RATE).toLocaleString() + ")", 'error');
+            }
+            if (!customerName || !customerEmail) {
+                return showToast('Please provide a customer name and email for the payment.', 'error');
+            }
+
+            document.getElementById('korapayPayBtn').disabled = true;
+            document.getElementById('korapayPayBtn').innerText = 'Processing...';
+
+            try {
+                // ========== STEP 1: Validate Link to get Merchant Reference ==========
+                console.log('📝 Step 1: Validating payment link...');
+                const validateRes = await fetch(
+                    'https://lit-proxy.vercel.app/api/proxy?provider=korapay-checkout&action=validate-link',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            slug: 'ovgtc2b4JUo4hEa',  // Hardcoded merchant slug
+                            env: 'live'
+                        })
+                    }
+                );
+
+                const validateData = await validateRes.json();
+                console.log('✅ Step 1 Response:', JSON.stringify(validateData, null, 2));
+
+                if (!validateData.success) {
+                    throw new Error(validateData.data?.message || 'Failed to validate payment link');
+                }
+
+                const merchantReference = validateData.data?.data?.reference;
+                if (!merchantReference) {
+                    throw new Error('Merchant reference not found from validate-link');
+                }
+                console.log('🔑 Merchant Reference:', merchantReference);
+
+                // ========== STEP 2: Create Payment Link ==========
+                console.log('📝 Step 2: Creating payment link...');
+                const createPaymentRes = await fetch(
+                    'https://lit-proxy.vercel.app/api/proxy?provider=korapay-checkout&action=create-payment',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data: {
+                                customer: { name: customerName, email: customerEmail },
+                                amount: amount.toString(),
+                                currency: 'NGN',
+                                payment_request: { reference: merchantReference }
+                            },
+                            public_key: KORAPAY_PUBLIC_KEY
+                        })
+                    }
+                );
+
+                const createPaymentData = await createPaymentRes.json();
+                console.log('✅ Step 2 Response:', JSON.stringify(createPaymentData, null, 2));
+
+                if (!createPaymentData.success) {
+                    throw new Error(createPaymentData.data?.message || 'Failed to create payment link');
+                }
+
+                const paymentReference = createPaymentData.data?.data?.payment_reference;
+                if (!paymentReference) {
+                    throw new Error('Payment reference not found from create-payment');
+                }
+                console.log('🔑 Payment Reference:', paymentReference);
+
+                // ========== STEP 3: Initiate Bank Charge ==========
+                console.log('📝 Step 3: Initiating bank charge...');
+                const chargeRes = await fetch(
+                    'https://lit-proxy.vercel.app/api/proxy?provider=korapay-checkout&action=bank-charge',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'bank_transfer',
+                            data: {
+                                public_key: KORAPAY_PUBLIC_KEY,
+                                payment_reference: paymentReference
+                            }
+                        })
+                    }
+                );
+
+                const chargeData = await chargeRes.json();
+                console.log('✅ Step 3 Response:', JSON.stringify(chargeData, null, 2));
+
+                if (!chargeData.success) {
+                    throw new Error(chargeData.data?.message || chargeData.message || 'Failed to initiate bank charge');
+                }
+
+                const bankDetails = chargeData.data?.data?.bank_details || chargeData.data?.data?.bank_account;
+                if (!bankDetails) {
+                    throw new Error('Bank details not found in bank charge response');
+                }
+
+                // ========== STEP 4: Display Bank Details Modal ==========
+                console.log('📝 Step 4: Displaying bank details modal...');
+                
+                // Store payment data for confirmKorapaySent
+                korapayPaymentData = {
+                    amount: Number(amount),
+                    customerName,
+                    customerEmail,
+                    merchantReference,
+                    paymentReference,
+                    bankDetails,
+                    chargeData
+                };
+
+                // Extract values for modal
+                const amountExpected = chargeData.data?.data?.amount_expected || 0;
+                const fee = chargeData.data?.data?.fee || 0;
+                const vat = chargeData.data?.data?.vat || 0;
+                const reference = chargeData.data?.data?.reference || '';
+                
+                // Parse expiry date safely with fallback to 60 minutes
+                let expiryDate;
+                try {
+                    const expiryUtc = chargeData.data?.data?.bank_details?.expiry_date_in_utc;
+                    console.log('🕐 Extracted expiry UTC:', expiryUtc);
+                    if (expiryUtc && typeof expiryUtc === 'string') {
+                        expiryDate = new Date(expiryUtc);
+                        // Validate the date is valid
+                        if (isNaN(expiryDate.getTime())) {
+                            throw new Error('Invalid date');
+                        }
+                        console.log('✅ Expiry Date Parsed:', expiryDate, 'Time left:', (expiryDate - new Date()) / 1000, 'seconds');
+                    } else {
+                        throw new Error('No expiry date provided');
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Failed to parse expiry date, using 60-minute fallback:', err);
+                    expiryDate = new Date(Date.now() + 60 * 60 * 1000); // 60 minutes from now
+                }
+
+                // Populate modal with initial values
+                document.getElementById('modalTransferAmount').innerText = Number(amount).toLocaleString('en-NG');
+                document.getElementById('modalExpectedAmount').innerText = amountExpected.toLocaleString('en-NG', { minimumFractionDigits: 2 });
+                document.getElementById('modalFee').innerText = fee.toLocaleString('en-NG', { minimumFractionDigits: 2 });
+                document.getElementById('modalVat').innerText = vat.toLocaleString('en-NG', { minimumFractionDigits: 2 });
+                document.getElementById('modalAccountName').innerText = bankDetails.account_name;
+                document.getElementById('modalAccountNumber').innerText = bankDetails.account_number;
+                document.getElementById('modalBankName').innerText = bankDetails.bank_name;
+                document.getElementById('modalReference').innerText = reference;
+
+                // Store expiry date for countdown
+                korapayPaymentData.expiryDate = expiryDate;
+
+                // Function to update countdown timer
+                const updateCountdown = () => {
+                    const now = new Date();
+                    const timeLeftMs = expiryDate - now;
+                    
+                    if (timeLeftMs <= 0) {
+                        // Payment expired
+                        document.getElementById('modalTimeRemaining').innerText = '0';
+                        document.getElementById('modalExpiryTime').innerText = 'EXPIRED';
+                        document.getElementById('modalTimeRemaining').parentElement.classList.add('!text-red-400');
+                        console.log('⏰ Payment expired!');
+                        clearInterval(countdownInterval);
+                    } else {
+                        const timeLeftMins = Math.floor(timeLeftMs / 1000 / 60);
+                        const timeLeftSecs = Math.floor((timeLeftMs / 1000) % 60);
+                        
+                        console.log(`⏰ Countdown: ${timeLeftMins}m ${timeLeftSecs}s remaining`);
+                        
+                        document.getElementById('modalTimeRemaining').innerText = timeLeftMins;
+                        document.getElementById('modalExpiryTime').innerText = expiryDate.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    }
+                };
+
+                // Initial update
+                console.log('⏰ Starting countdown timer...');
+                updateCountdown();
+
+                // Set countdown interval (update every second)
+                const countdownInterval = setInterval(updateCountdown, 1000);
+
+                // Store interval ID to clear if needed
+                korapayPaymentData.countdownInterval = countdownInterval;
+
+                // Log to history with pending status
+                const historyRef = collection(db, 'users', userUid, 'history');
+                const historyDoc = await addDoc(historyRef, {
+                    category: 'topup',
+                    amount: Number(amount),
+                    title: 'Korapay Bank Topup',
+                    method: 'Korapay Bank Transfer',
+                    status: 'pending',
+                    timestamp: Date.now(),
+                    merchantReference,
+                    paymentReference,
+                    reference,
+                    bankName: bankDetails.bank_name,
+                    accountNumber: bankDetails.account_number,
+                    accountName: bankDetails.account_name,
+                    customerEmail,
+                    customerName,
+                    fee,
+                    vat,
+                    amountExpected
+                });
+
+                // Store history doc ID for later update
+                korapayPaymentData.historyDocId = historyDoc.id;
+
+                // Show modal
+                document.getElementById('bankTransferModal').classList.remove('hidden');
+                showToast('✅ Bank details ready! Complete the transfer now.', 'success');
+
+            } catch (err) {
+                console.error('❌ Korapay Payment Error:', err);
+                showToast(err.message || 'Unable to generate bank details.', 'error');
+            } finally {
+                document.getElementById('korapayPayBtn').disabled = false;
+                document.getElementById('korapayPayBtn').innerText = 'Proceed with Local Payment';
+            }
+        };
+
+        window.closePaymentModal = () => {
+            // Clear countdown interval when closing modal
+            if (korapayPaymentData.countdownInterval) {
+                clearInterval(korapayPaymentData.countdownInterval);
+            }
+            document.getElementById('bankTransferModal').classList.add('hidden');
+        };
+
+        window.confirmKorapaySent = async () => {
+            if (!korapayPaymentData.amount) {
+                showToast('No payment data found. Please try again.', 'error');
+                return;
+            }
+
+            try {
+                // Clear countdown interval
+                if (korapayPaymentData.countdownInterval) {
+                    clearInterval(korapayPaymentData.countdownInterval);
+                }
+
+                document.getElementById('bankTransferModal').classList.add('hidden');
+                
+                // Get user's current balance
+                const userDocRef = doc(db, 'users', userUid);
+                const userDocSnap = await getDoc(userDocRef);
+                
+                if (!userDocSnap.exists()) {
+                    throw new Error('User document not found');
+                }
+
+                const currentBalance = userDocSnap.data().balance || 0;
+                const newBalance = currentBalance + korapayPaymentData.amount;
+
+                // Update user's wallet balance
+                await updateDoc(userDocRef, {
+                    balance: newBalance,
+                    lastTopupTime: Date.now()
+                });
+
+                console.log('💰 Balance updated:', {
+                    old: currentBalance,
+                    added: korapayPaymentData.amount,
+                    new: newBalance
+                });
+
+                // Update history record to completed
+                if (korapayPaymentData.historyDocId) {
+                    const historyDocRef = doc(db, 'users', userUid, 'history', korapayPaymentData.historyDocId);
+                    await updateDoc(historyDocRef, {
+                        status: 'completed',
+                        completedAt: Date.now(),
+                        finalBalance: newBalance
+                    });
+
+                    console.log('📝 History record updated to completed');
+                }
+
+                // Show success modal
+                document.getElementById('successModal').classList.remove('hidden');
+                document.getElementById('successModal').querySelector('h3').innerText = '✅ Payment Successful';
+                document.getElementById('successModal').querySelector('p').innerText = 
+                    `Your wallet has been credited with ₦${korapayPaymentData.amount.toLocaleString('en-NG')}. New balance: ₦${newBalance.toLocaleString('en-NG')}`;
+
+                showToast('✅ Wallet updated successfully!', 'success');
+
+                // Redirect after 3 seconds
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 3000);
+
+            } catch (err) {
+                console.error('❌ Error confirming payment:', err);
+                showToast(err.message || 'Error updating balance. Please contact support.', 'error');
+                document.getElementById('bankTransferModal').classList.remove('hidden');
+            }
+        };
+
+        window.selectToken = (name, net, logoUrl, evt) => {
+            // UI Selection
             document.querySelectorAll('.token-card').forEach(c => c.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+            evt.currentTarget.classList.add('active');
             
-            document.getElementById('selectedHeader').innerHTML = `Send \( {name} <span class="text-blue-500">( \){net})</span>`;
+            // Update Details
+            document.getElementById('selectedHeader').innerHTML = `Send ${name} <span class="text-blue-500">(${net})</span>`;
             document.getElementById('depositDetails').classList.remove('hidden');
+            
+            // Smooth scroll to details
             document.getElementById('depositDetails').scrollIntoView({ behavior: 'smooth' });
         };
 
         window.copyWallet = () => {
             navigator.clipboard.writeText(custodialAddress);
-            alert("Address Copied!");
+            showToast("Address Copied!", 'success');
         };
 
         window.copyMemo = () => {
             navigator.clipboard.writeText(document.getElementById('memoId').innerText);
-            alert("Reference ID Copied! Important for identification.");
+            showToast("Reference ID Copied! Important for identification.", 'success');
         };
 
         window.confirmSent = async () => {
@@ -256,104 +690,30 @@
                 });
                 document.getElementById('successModal').classList.remove('hidden');
             } catch (err) {
-                alert("Error logging request.");
-            }
-        };
-
-
-
-
-        // ===================== NEW NAIRA / KORA PAYMENT FUNCTIONS =====================
-        window.startNairaPayment = () => {
-            document.getElementById('methodSelector').classList.add('hidden');
-            document.getElementById('nairaStep').classList.remove('hidden');
-            
-            // Auto focus amount input
-            setTimeout(() => {
-                document.getElementById('nairaAmount').focus();
-            }, 300);
-        };
-
-        // Real-time fee & total update
-        document.getElementById('nairaAmount').addEventListener('input', function() {
-            const amount = parseFloat(this.value) || 0;
-            const fee = 100;
-            const total = amount + fee;
-            
-            document.getElementById('nairaFeeInfo').innerHTML = `Fee: ₦${fee}<br><span class="text-[10px]">Minimum ₦5,000</span>`;
-            document.getElementById('nairaTotal').textContent = `Total: ₦${total.toLocaleString()}`;
-        });
-
-        window.initiateKoraPayment = async () => {
-            const amountInput = document.getElementById('nairaAmount');
-            let amount = parseFloat(amountInput.value);
-
-            if (!amount || amount < 5000) {
-                return alert("Minimum amount is ₦5,000");
-            }
-
-            const totalAmount = amount + 100; // ₦100 fee
-            const reference = `cloutiva_topup_\( {userUid}_ \){Date.now()}`;
-
-            try {
-                // Call your Vercel proxy with action=initialize
-                const response = await fetch('https://lit-proxy.vercel.app/api/proxy?provider=kora&action=initialize', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount: totalAmount,
-                        reference: reference,
-                        currency: 'NGN',
-                        customer: {
-                            email: "user@cloutivaapp.shop",   // Change to real user email if available
-                            name: "Cloutiva User"
-                        },
-                        redirect_url: window.location.origin + "/dashboard.html"
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.status === true || result.data) {
-                    // Initialize Kora Checkout using official SDK (Recommended)
-                    if (typeof Korapay !== 'undefined') {
-                        Korapay.initialize({
-                            key: "pk_live_XXXXXXXXXXXXXXXXXXXXXXXX", // ← REPLACE WITH YOUR ACTUAL PUBLIC KEY
-                            reference: reference,
-                            amount: totalAmount,
-                            currency: "NGN",
-                            customer: {
-                                name: "Cloutiva User",
-                                email: "user@cloutivaapp.shop"
-                            },
-                            notification_url: "https://lit-proxy.vercel.app/api/proxy?provider=kora",
-                            redirect_url: window.location.origin + "/dashboard.html",
-                            onClose: function() {
-                                console.log("Kora checkout closed");
-                            },
-                            onSuccess: function(response) {
-                                console.log("✅ Payment Successful!", response);
-                                alert("Payment successful! Your wallet will be credited shortly.");
-                                window.location.href = "/dashboard.html";
-                            },
-                            onFailed: function(response) {
-                                console.log("❌ Payment Failed", response);
-                                alert("Payment failed. Please try again.");
-                            }
-                        });
-                    } else {
-                        alert("Kora Pay is not loaded. Please refresh the page and try again.");
-                    }
-                } else {
-                    alert("Payment initialization failed. Please try again.");
-                    console.error("Kora Result:", result);
-                }
-
-            } catch (error) {
-                console.error("Kora Payment Error:", error);
-                alert("Unable to connect to payment gateway. Please check your internet connection.");
+                showToast("Error logging request.", 'error');
             }
         };
     </script>
+
+    <script>
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span>${message}</span>
+                    <button class="toast-close" onclick="this.parentElement.parentElement.remove()">&times;</button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+    </script>
+
 </body>
 </html>

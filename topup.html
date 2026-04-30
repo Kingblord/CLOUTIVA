@@ -208,7 +208,12 @@
             <div class="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/10 space-y-3 text-left">
                 <div>
                     <p class="text-[9px] text-slate-400 uppercase mb-1">Amount to Pay (with fees) pay exact amont</p>
-                    <p class="text-xl font-black text-blue-300">₦<span id="modalExpectedAmount">8,637.06</span></p>
+                    <div class="flex gap-2 items-center">
+                        <p class="text-xl font-black text-blue-300">₦<span id="modalExpectedAmount">8,637.06</span></p>
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('modalExpectedAmount').innerText); showToast('Amount copied!', 'success')" class="w-8 h-8 bg-blue-600/20 text-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-600/30 text-sm">
+                            <i class="fa-solid fa-copy"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <p class="text-[9px] text-slate-400 uppercase mb-1">Topup Amount</p>
@@ -601,7 +606,7 @@
                 
                 // ========== CRITICAL: VERIFY PAYMENT BEFORE CREDITING ==========
                 // This ensures the balance is only updated AFTER Korapay confirms payment success
-                const verifyRes = await fetch('/api/proxy?provider=korapay-checkout&action=verify-payment', {
+                const verifyRes = await fetch('https://lit-proxy.vercel.app/api/proxy?provider=korapay-checkout&action=verify-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -671,10 +676,7 @@
 
                 showToast('✅ Payment verified! Wallet updated successfully!', 'success');
 
-                // Redirect after 3 seconds
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 3000);
+                
 
             } catch (err) {
                 console.error('❌ Error confirming payment:', err);

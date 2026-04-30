@@ -207,12 +207,12 @@
             <!-- Amount Section -->
             <div class="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/10 space-y-3 text-left">
                 <div>
-                    <p class="text-[9px] text-slate-400 uppercase mb-1">Topup Amount</p>
-                    <p class="text-xl font-black text-blue-300">₦<span id="modalTransferAmount">8,500</span></p>
+                    <p class="text-[9px] text-slate-400 uppercase mb-1">Amount to Pay (with fees) pay exact amont</p>
+                    <p class="text-xl font-black text-blue-300">₦<span id="modalExpectedAmount">8,637.06</span></p>
                 </div>
                 <div>
-                    <p class="text-[9px] text-slate-400 uppercase mb-1">Amount to Pay (with fees)</p>
-                    <p class="text-sm font-bold text-slate-200">₦<span id="modalExpectedAmount">8,637.06</span></p>
+                    <p class="text-[9px] text-slate-400 uppercase mb-1">Topup Amount</p>
+                    <p class="text-sm font-bold text-slate-200">₦<span id="modalTopupAmount">8,500</span></p>
                 </div>
                 <div class="pt-3 border-t border-blue-500/10 space-y-2">
                     <div class="flex justify-between text-[9px]">
@@ -299,7 +299,7 @@
         let custodialAddress = "";
         let selectedMethod = 'crypto';
         let selectedKorapayReference = '';
-        const NGN_RATE = HERO_SMS_CONFIG.rate || 1600;
+        const NGN_RATE = HERO_SMS_CONFIG.rate || 1250;
 
         protectPage((userData) => {
             userUid = userData.uid;
@@ -596,6 +596,33 @@
                 }
 
                 document.getElementById('bankTransferModal').classList.add('hidden');
+                showToast('⏳ Verifying payment with Korapay... Please wait.', 'info');
+                console.log('🔍 Step: Verifying payment status with Korapay...');
+                
+                // ========== CRITICAL: VERIFY PAYMENT BEFORE CREDITING ==========
+                // This ensures the balance is only updated AFTER Korapay confirms payment success
+                const verifyRes = await fetch('/api/proxy?provider=korapay-checkout&action=verify-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        slug: korapayPaymentData.merchantReference,
+                        reference: korapayPaymentData.paymentReference
+                    })
+                });
+
+                const verifyData = await verifyRes.json();
+                console.log('✅ Payment Verification Response:', verifyData);
+
+                // CRITICAL CHECK: Do NOT proceed if payment is not verified
+                if (!verifyRes.ok || !verifyData.success || !verifyData.verified) {
+                    console.error('❌ Payment verification FAILED!');
+                    throw new Error(
+                        verifyData.error || 
+                        'Payment confirmation failed. Please check your bank transfer and try again.'
+                    );
+                }
+
+                console.log('✅ Payment VERIFIED! Proceeding with balance update...');
                 
                 // Get user's current balance
                 const userDocRef = doc(db, 'users', userUid);
@@ -608,16 +635,18 @@
                 const currentBalance = userDocSnap.data().balance || 0;
                 const newBalance = currentBalance + korapayPaymentData.amount;
 
-                // Update user's wallet balance
+                // ========== ONLY UPDATE BALANCE AFTER VERIFICATION ==========
                 await updateDoc(userDocRef, {
                     balance: newBalance,
-                    lastTopupTime: Date.now()
+                    lastTopupTime: Date.now(),
+                    lastVerifiedPaymentReference: korapayPaymentData.paymentReference
                 });
 
-                console.log('💰 Balance updated:', {
+                console.log('💰 Balance updated (AFTER payment verified):', {
                     old: currentBalance,
                     added: korapayPaymentData.amount,
-                    new: newBalance
+                    new: newBalance,
+                    verifiedReference: korapayPaymentData.paymentReference
                 });
 
                 // Update history record to completed
@@ -626,19 +655,21 @@
                     await updateDoc(historyDocRef, {
                         status: 'completed',
                         completedAt: Date.now(),
-                        finalBalance: newBalance
+                        finalBalance: newBalance,
+                        verificationStatus: 'verified',
+                        korapayReference: korapayPaymentData.paymentReference
                     });
 
-                    console.log('📝 History record updated to completed');
+                    console.log('📝 History record updated to completed (verified)');
                 }
 
                 // Show success modal
                 document.getElementById('successModal').classList.remove('hidden');
-                document.getElementById('successModal').querySelector('h3').innerText = '✅ Payment Successful';
+                document.getElementById('successModal').querySelector('h3').innerText = '✅ Payment Verified & Balance Credited';
                 document.getElementById('successModal').querySelector('p').innerText = 
                     `Your wallet has been credited with ₦${korapayPaymentData.amount.toLocaleString('en-NG')}. New balance: ₦${newBalance.toLocaleString('en-NG')}`;
 
-                showToast('✅ Wallet updated successfully!', 'success');
+                showToast('✅ Payment verified! Wallet updated successfully!', 'success');
 
                 // Redirect after 3 seconds
                 setTimeout(() => {
@@ -647,7 +678,7 @@
 
             } catch (err) {
                 console.error('❌ Error confirming payment:', err);
-                showToast(err.message || 'Error updating balance. Please contact support.', 'error');
+                showToast(err.message || 'Payment verification failed. Please contact support.', 'error');
                 document.getElementById('bankTransferModal').classList.remove('hidden');
             }
         };
